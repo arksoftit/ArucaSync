@@ -1,0 +1,33 @@
+{
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "sqltools.connections": [
+        {
+            "pgOptions": {
+                "ssl": {
+                    "rejectUnauthorized": false,
+                    "passphrase": "plLT7JcmwablrYUQ"
+                }
+            },
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "aws-0-us-east-2.pooler.supabase.com",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "ArucaSync",
+            "group": "Aruca",
+            "database": "postgres",
+            "username": "postgres.fnxtpipsnebhhczqcnse"
+        },
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "askForPassword": true,
+            "driver": "PostgreSQL",
+            "name": "ArucaSyncLocal",
+            "database": "aruca_trade_db",
+            "username": "juanep"
+        }
+    ]
+}
