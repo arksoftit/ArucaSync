@@ -11,6 +11,7 @@ from sync_data import COLUMNAS_MAP, MAPA_TABLAS, mapear_tablas, FILTROS_TABLAS, 
 from dialog_subidas import DialogSubidas
 from sync_down import SyncDown
 from dialog_sync_status import DialogSyncStatus
+from dialog_users import DialogUsers
 from sync_logger import LogManager
 from system_info import (
     APP_DATE,
@@ -49,6 +50,11 @@ class AppSincronizador(tk.Tk):
         menu_descargas.add_command(label="Descargar Transacciones", command=self._descargar_transacciones)
         barra.add_cascade(label="Descargas", menu=menu_descargas)
         
+        menu_config = tk.Menu(barra, tearoff=0)
+        menu_config.add_command(label="Gestión de usuarios", command=self._gestion_usuarios)
+        menu_config.add_command(label="Programar automatización", command=self._programar_automatizacion)
+        barra.add_cascade(label="Configuración", menu=menu_config)
+        
         menu_ayuda = tk.Menu(barra, tearoff=0)
         menu_ayuda.add_command(label="Acerca de...", command=self.mostrar_acerca)
         barra.add_cascade(label="Ayuda", menu=menu_ayuda)
@@ -82,6 +88,13 @@ class AppSincronizador(tk.Tk):
         
     def _descargar_clientes(self):
         DialogDescargas(self, self.manager)
+    
+    def _gestion_usuarios(self):
+        DialogUsers(self)
+        
+    def _programar_automatizacion(self):
+        messagebox.showinfo("Programar automatización", "Funcionalidad en desarrollo.", parent=self)
+        
 
     def _descargar_transacciones(self):
         DialogDescargasTransacciones(self, self.manager)
