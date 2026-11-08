@@ -91,4 +91,5 @@ En esta sesión se implementaron las siguientes mejoras y reglas de negocio en l
   - `trg_heredar_documento_detalle`: Asegura que los detalles en `arc_detalletranvtas` hereden exactamente el mismo número de documento formateado de su cabecera.
 - **Estandarización de Estatus:** Basado en el diccionario de datos oficial de DBISAM, se corrigió el estatus de las transacciones web. Ahora se insertan con estatus `4` (**Tránsito**) en lugar de `1` (Procesada), indicando que están pendientes de revisión por la oficina administrativa.
 - **Validación de Flujo Completo:** Se comprobó con éxito que la nueva nomenclatura de 12 dígitos viaja correctamente desde PostgreSQL y se inserta sin truncamientos ni errores en los campos `FTI_DOCUMENTO` y `FDI_DOCUMENTO` de DBISAM.
+
 *Desarrollado para optimizar el flujo de trabajo entre la fuerza de ventas y el sistema administrativo.*
