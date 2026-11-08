@@ -78,4 +78,18 @@ python sync/main.py
 - **Triggers en PostgreSQL:** Se implementaron funciones para que la base de datos calcule automáticamente los montos, subtotales e impuestos al momento de la inserción, evitando que el frontend o el backend web envíen datos erróneos.
 
 ---
+
+## 📅 Registro de Actualizaciones (Changelog)
+
+### Actualización: 08 de Noviembre de 2026
+
+En esta sesión se implementaron las siguientes mejoras y reglas de negocio en la base de datos PostgreSQL (Supabase) para consolidar la integración con el sistema administrativo:
+
+- **Máscara de Documentos de 12 Dígitos:** Las transacciones generadas por la aplicación web ahora utilizan un formato de número de documento compuesto por el año y mes (`YYYYMM`) más un correlativo de 6 dígitos (Ej: `202611000015`).
+- **Nuevos Triggers en PostgreSQL:** Se crearon dos funciones y sus respectivos Triggers para automatizar la nomenclatura sin afectar el código de Node.js:
+  - `trg_aplicar_prefijo_documento`: Captura el número crudo enviado a `arc_transacciones` y le concatena el prefijo `YYYYMM`.
+  - `trg_heredar_documento_detalle`: Asegura que los detalles en `arc_detalletranvtas` hereden exactamente el mismo número de documento formateado de su cabecera.
+- **Estandarización de Estatus:** Basado en el diccionario de datos oficial de DBISAM, se corrigió el estatus de las transacciones web. Ahora se insertan con estatus `4` (**Tránsito**) en lugar de `1` (Procesada), indicando que están pendientes de revisión por la oficina administrativa.
+- **Validación de Flujo Completo:** Se comprobó con éxito que la nueva nomenclatura de 12 dígitos viaja correctamente desde PostgreSQL y se inserta sin truncamientos ni errores en los campos `FTI_DOCUMENTO` y `FDI_DOCUMENTO` de DBISAM.
+
 *Desarrollado para optimizar el flujo de trabajo entre la fuerza de ventas y el sistema administrativo.*
