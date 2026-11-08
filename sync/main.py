@@ -10,6 +10,7 @@ from remoteconnection import RemoteDBManager
 from sync_data import COLUMNAS_MAP, MAPA_TABLAS, mapear_tablas, FILTROS_TABLAS, COLUMNAS_VISOR
 from dialog_subidas import DialogSubidas
 from sync_down import SyncDown
+from dialog_sync_status import DialogSyncStatus
 from sync_logger import LogManager
 from system_info import (
     APP_DATE,
@@ -40,6 +41,7 @@ class AppSincronizador(tk.Tk):
         
         menu_subidas = tk.Menu(barra, tearoff=0)
         menu_subidas.add_command(label="Subir desde DBISAM", command=self._subida_dbisam)
+        menu_subidas.add_command(label="Actualizar Estados DBISAM", command=self._subir_estados)
         barra.add_cascade(label="Subidas", menu=menu_subidas)
         
         menu_descargas = tk.Menu(barra, tearoff=0)
@@ -74,6 +76,9 @@ class AppSincronizador(tk.Tk):
 
     def _subida_dbisam(self):
         DialogSubidas(self, self.manager)
+    
+    def _subir_estados(self):
+        DialogSyncStatus(self, self.manager)
         
     def _descargar_clientes(self):
         DialogDescargas(self, self.manager)

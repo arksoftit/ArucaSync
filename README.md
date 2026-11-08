@@ -92,4 +92,11 @@ En esta sesión se implementaron las siguientes mejoras y reglas de negocio en l
 - **Estandarización de Estatus:** Basado en el diccionario de datos oficial de DBISAM, se corrigió el estatus de las transacciones web. Ahora se insertan con estatus `4` (**Tránsito**) en lugar de `1` (Procesada), indicando que están pendientes de revisión por la oficina administrativa.
 - **Validación de Flujo Completo:** Se comprobó con éxito que la nueva nomenclatura de 12 dígitos viaja correctamente desde PostgreSQL y se inserta sin truncamientos ni errores en los campos `FTI_DOCUMENTO` y `FDI_DOCUMENTO` de DBISAM.
 
+### Actualización: 08 de Noviembre de 2026 (Sesión Tarde)
+
+- **Máscara de Documentos de 12 Dígitos:** Se implementaron Triggers en PostgreSQL para concatenar el año, mes y correlativo (`YYYYMM` + `000000`).
+- **Sincronización de Estados (DBISAM → PostgreSQL):** Se creó el módulo `sync_status.py` y la interfaz `dialog_sync_status.py` para leer los cambios de estatus (Procesado, Anulado) realizados en DBISAM y reflejarlos en PostgreSQL.
+- **Base de Datos Local (SQLite):** Se implementó `arucasyncdb.py` para llevar el control de los documentos bajados y sus estatus iniciales, permitiendo identificar eficientemente qué transacciones han cambiado.
+- **Mejoras de Estabilidad:** Se optimizó el cierre de conexiones en `dbconnection.py` para evitar cierres inesperados de la aplicación al usar múltiples ventanas.
+
 *Desarrollado para optimizar el flujo de trabajo entre la fuerza de ventas y el sistema administrativo.*

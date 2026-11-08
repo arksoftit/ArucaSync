@@ -109,7 +109,10 @@ class DBConnectionManager:
     
     def disconnect(self):
         for conn in self.conexiones.values():
-            conn.close()
+            try:
+                conn.close()
+            except Exception:
+                pass
         self.conexiones.clear()
         self.dsns.clear()
 

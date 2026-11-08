@@ -1,6 +1,7 @@
 import pyodbc
 import pg8000.dbapi
 from sync_logger import LogManager
+from arucasyncdb import ArucaSyncDBManager
 
 class SyncDown:
     def __init__(self, manager_local, config_remota):
@@ -122,6 +123,8 @@ class SyncDown:
     def bajar_transacciones(self):
         self.logger = LogManager()
         self.logger.info("Iniciando sincronización de bajada para Transacciones (Cabeceras y Detalles)...")
+        
+        db_local = ArucaSyncDBManager()
 
         remoto = self._conectar_remoto()
         cursor_remoto = remoto.cursor()
@@ -359,6 +362,115 @@ class SyncDown:
             cursor_remoto.close()
             remoto.close()
             return 0
+
+        conn_local.setdecoding(pyodbc.SQL_CHAR, encoding='latin-1')
+        conn_local.setencoding(encoding='latin-1')
+        cursor_local = conn_local.cursor()
+        
+        contador = 0
+
+        def formatear_valor_sql(val):
+            if val is None:
+                return "NULL"
+            if isinstance(val, bool):
+                return "True" if val else "False"
+            if isinstance(val, (int, float)):
+                return str(val)
+            if isinstance(val, str):
+                if len(val) >= 10 and val[4:5] == '-' and val[7:8] == '-' and 'T' in val:
+                    try:
+                        val = val.split('T')[0]
+                    except Exception:
+                        pass
+                val_clean = val.replace("'", "''")
+                return f"'{val_clean}'"
+            if hasattr(val, 'isoformat'):
+                val_str = val.isoformat().split('T')[0]
+                return f"'{val_str}'"
+            return f"'{str(val)}'"
+
+        try:
+            documentos_procesados = []
+
+            for fila in filas:
+                reg = dict(zip(nombres_cols_remotas, fila))
+                trn_tipo = reg.get("trn_tipo")
+                trn_documento = reg.get("trn_documento")
+                trn_serie = reg.get("trn_serie", "WEB")
+                trn_status = reg.get("trn_status") # Extraemos el status
+
+                valores_sql = []
+                for col_pg, col_db in columnas_mapa:
+                    val = reg.get(col_pg, None)
+                    valores_sql.append(formatear_valor_sql(val))
+                
+                sql_cab = f"INSERT INTO SOperacionInv ({', '.join(columnas_cab)}) VALUES ({', '.join(valores_sql)})"
+                cursor_local.execute(sql_cab)
+
+                cursor_local.execute(
+                    "SELECT FTI_AUTOINCREMENT FROM SOperacionInv WHERE FTI_SERIE = ? AND FTI_TIPO = ? AND FTI_DOCUMENTO = ?",
+                    (trn_serie, trn_tipo, trn_documento)
+                )
+                row_auto = cursor_local.fetchone()
+                autoinc_generado = row_auto[0] if row_auto else 0
+
+                cols_pg_det = [p[0] for p in columnas_mapa_det]
+                cols_db_det = [p[1] for p in columnas_mapa_det if p[1].upper() not in {"FDI_AUTOINCREMENT", "FDI_BASE_AUTOINCREMENT"}]
+
+                cursor_remoto.execute(
+                    f"SELECT {', '.join(cols_pg_det)} FROM public.arc_detalletranvtas WHERE dtv_tipooperacion = %s AND dtv_documento = %s AND dtv_sync_status = false",
+                    (trn_tipo, trn_documento)
+                )
+                filas_det = cursor_remoto.fetchall()
+                nombres_cols_remotas_det = [desc[0].lower() for desc in cursor_remoto.description]
+
+                for fila_det in filas_det:
+                    reg_det = dict(zip(nombres_cols_remotas_det, fila_det))
+                    valores_sql_det = []
+                    for col_pg, col_db in columnas_mapa_det:
+                        if col_db.upper() not in {"FDI_AUTOINCREMENT", "FDI_BASE_AUTOINCREMENT"}:
+                            val_det = reg_det.get(col_pg, None)
+                            valores_sql_det.append(formatear_valor_sql(val_det))
+
+                    cols_insert_det = list(cols_db_det) + ["FDI_OPERACION_AUTOINCREMENT"]
+                    valores_sql_det.append(str(autoinc_generado))
+
+                    sql_det = f"INSERT INTO SDetalleVenta ({', '.join(cols_insert_det)}) VALUES ({', '.join(valores_sql_det)})"
+                    cursor_local.execute(sql_det)
+
+                documentos_procesados.append((trn_tipo, trn_documento, trn_status)) # Agregamos el status a la lista
+                contador += 1
+
+            conn_local.commit()
+
+            for t_tipo, t_doc, t_status in documentos_procesados:
+                cursor_remoto.execute(
+                    "UPDATE public.arc_transacciones SET trn_sync_status = true WHERE trn_tipo = %s AND trn_documento = %s",
+                    (t_tipo, t_doc)
+                )
+                cursor_remoto.execute(
+                    "UPDATE public.arc_detalletranvtas SET dtv_sync_status = true WHERE dtv_tipooperacion = %s AND dtv_documento = %s",
+                    (t_tipo, t_doc)
+                )
+                
+                # --- REGISTRO EN SQLITE ---
+                status_guardar = t_status if t_status is not None else 4
+                db_local.registrar_bajada(documento=str(t_doc), tipo=t_tipo, status_bajado=status_guardar)
+                
+            remoto.commit()
+            
+            self.logger.cerrar(f"Sincronización de bajada completada. Transacciones (Cabeceras y Detalles) insertadas: {contador}.")
+            return contador
+            
+        except Exception as e:
+            conn_local.rollback()
+            remoto.rollback()
+            self.logger.error(f"Error en sincronización de bajada de transacciones: {str(e)}")
+            raise e
+        finally:
+            cursor_local.close()
+            cursor_remoto.close()
+            remoto.close()
 
         conn_local.setdecoding(pyodbc.SQL_CHAR, encoding='latin-1')
         conn_local.setencoding(encoding='latin-1')
