@@ -19,7 +19,6 @@ class ArucaSyncDBManager:
     def _crear_tablas(self):
         with self._conectar() as conn:
             cursor = conn.cursor()
-            
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS sync_control (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,7 +29,6 @@ class ArucaSyncDBManager:
                     UNIQUE(documento, tipo)
                 )
             """)
-            
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS app_users (
                     username TEXT PRIMARY KEY,
@@ -45,7 +43,6 @@ class ArucaSyncDBManager:
                     cargo TEXT
                 )
             """)
-            
             conn.commit()
             self._crear_superusuario_default()
 

@@ -1,7 +1,20 @@
 import os
+import sys
 import threading
 import tkinter as tk
 from tkinter import ttk, messagebox
+
+# Detección inteligente de ruta (funciona como script o como .exe compilado)
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+CONFIG_PATH = os.path.join(BASE_DIR, "config", "conexiones.json")
+AUTOSYNC_CONFIG_PATH = os.path.join(BASE_DIR, "config", "autosync_config.json")
+LOGS_DIR = os.path.join(BASE_DIR, "logs")
+
+
 from dbconnection import DBConnectionManager, ORIGENES
 from dialog_conexiones import DialogConexiones
 from dialog_conexion_remota import DialogConexionRemota
@@ -12,6 +25,7 @@ from dialog_subidas import DialogSubidas
 from sync_down import SyncDown
 from dialog_sync_status import DialogSyncStatus
 from dialog_users import DialogUsers
+from dialog_autosync import DialogAutosync
 from sync_logger import LogManager
 from system_info import (
     APP_DATE,
@@ -21,9 +35,6 @@ from system_info import (
     get_date_audit,
     get_machine_name,
 )
-
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config", "conexiones.json")
-
 
 class AppSincronizador(tk.Tk):
     def __init__(self):
@@ -93,7 +104,7 @@ class AppSincronizador(tk.Tk):
         DialogUsers(self)
         
     def _programar_automatizacion(self):
-        messagebox.showinfo("Programar automatización", "Funcionalidad en desarrollo.", parent=self)
+        DialogAutosync(self)
         
 
     def _descargar_transacciones(self):

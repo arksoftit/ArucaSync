@@ -1,0 +1,15 @@
+{
+    "tablas_subida": [],
+    "tablas_bajada": [
+        "arc_transacciones",
+        "arc_detalletranvtas"
+    ],
+    "tipo_ciclo": "Definido por el usuario",
+    "minutos": "5",
+    "hora_inicio": "07:00",
+    "hora_fin": "23:00",
+    "fecha_desde_sub": "2026-11-01",
+    "fecha_hasta_sub": "2026-11-15",
+    "fecha_desde_baj": "2026-11-01",
+    "fecha_hasta_baj": "2026-11-15"
+}
