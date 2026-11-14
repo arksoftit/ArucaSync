@@ -11,5 +11,10 @@
     "fecha_desde_sub": "2026-11-01",
     "fecha_hasta_sub": "2026-11-15",
     "fecha_desde_baj": "2026-11-01",
-    "fecha_hasta_baj": "2026-11-15"
+    "fecha_hasta_baj": "2026-11-15",
+    "sincronizar_existencias": true,
+    "metodo_sinc_existencias": "periodico",
+    "frecuencia_minutos_exist": 60,
+    "monitorear_sensores_exist": false,
+    "incluir_nuevos_productos": true
 }

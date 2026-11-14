@@ -107,6 +107,27 @@ def main():
             except Exception as e:
                 logger.error(f"Error subiendo {tabla_destino}: {str(e)}")
 
+    # Sincronización de existencias de tránsito desde SinvDep (DBISAM -> SQLite local)
+    try:
+        ok, msg, conn_local_db = manager.open_connection()
+        if ok:
+            conn_local_db.setdecoding(pyodbc.SQL_CHAR, encoding='latin-1')
+            conn_local_db.setencoding(encoding='latin-1')
+            conn_local_db.setdecoding(pyodbc.SQL_WCHAR, encoding='latin-1')
+            
+            cursor_db = conn_local_db.cursor()
+            cursor_db.execute("SELECT FT_CODIGOPRODUCTO, FT_CODIGODEPOSITO, FT_EXISTENCIA FROM SinvDep")
+            registros_sinvdep = cursor_db.fetchall()
+            cursor_db.close()
+            conn_local_db.close()
+
+            from arucasyncdb import ArucaSyncDBManager
+            db_manager = ArucaSyncDBManager()
+            db_manager.actualizar_existencia_transito_lote(registros_sinvdep)
+            logger.info(f"Sincronización de Existencia Tránsito (SinvDep): {len(registros_sinvdep)} registros procesados localmente.")
+    except Exception as e:
+        logger.error(f"Error procesando existencia de tránsito desde SinvDep: {str(e)}")
+        
     logger.info("Iniciando proceso de Bajada...")
     f_desde_baj = config.get("fecha_desde_baj", "")
     f_hasta_baj = config.get("fecha_hasta_baj", "")

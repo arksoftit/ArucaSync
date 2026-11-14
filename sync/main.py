@@ -27,6 +27,7 @@ from dialog_sync_status import DialogSyncStatus
 from dialog_users import DialogUsers
 from dialog_autosync import DialogAutosync
 from sync_logger import LogManager
+from arucasyncdb import ArucaSyncDBManager
 from system_info import (
     APP_DATE,
     APP_DEVELOPER,
@@ -42,6 +43,7 @@ class AppSincronizador(tk.Tk):
         self.title("Sincronizador ArkToolsWeb")
         self._center_window(1000, 600)
         self.manager = DBConnectionManager(CONFIG_PATH)
+        self.db_local = ArucaSyncDBManager()
         self.logger = None
         self.protocol("WM_DELETE_WINDOW", self._salir)
 
