@@ -34,7 +34,6 @@ class ArucaSyncDBManager:
                     ilt_id_auto INTEGER PRIMARY KEY AUTOINCREMENT,
                     ilt_codigo_producto VARCHAR(40) NOT NULL,
                     ilt_codigo_deposito INTEGER NOT NULL DEFAULT 1,
-                    ilt_tipo_operacion INTEGER NOT NULL,
                     ilt_existencia REAL,
                     ilt_salida_efectiva REAL,
                     ilt_cantidad_transito REAL,
@@ -42,6 +41,10 @@ class ArucaSyncDBManager:
                     ilt_systemdate DATETIME DEFAULT CURRENT_TIMESTAMP,
                     ilt_lastupdatedate DATETIME
                 )
+            """)
+            cursor.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_sync_inv_prod_dep 
+                ON sync_inventario_transito(ilt_codigo_producto, ilt_codigo_deposito)
             """)
             cursor.execute("""
                 CREATE UNIQUE INDEX IF NOT EXISTS idx_sync_inv_prod_dep 
@@ -61,6 +64,18 @@ class ArucaSyncDBManager:
                     cargo TEXT
                 )
             """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS sync_monitor_control (
+                    mon_id_auto INTEGER PRIMARY KEY AUTOINCREMENT,
+                    mon_tablename TEXT NOT NULL,
+                    mon_tipo_transaccion INTEGER NOT NULL,
+                    mon_total_registros INTEGER DEFAULT 0,
+                    mon_lastupdatedate DATETIME,
+                    mon_lastdocument TEXT NOT NULL,
+                    mon_lastdocumentdate DATETIME,
+                    UNIQUE(mon_tablename, mon_tipo_transaccion, mon_lastdocument)
+                )
+        """)
             conn.commit()
             print(">>> _crear_tablas ejecutado correctamente: sync_inventario_transito verificada.")
             self._crear_superusuario_default()
@@ -176,22 +191,19 @@ class ArucaSyncDBManager:
     def actualizar_existencia_transito_lote(self, registros):
         with self._conectar() as conn:
             cursor = conn.cursor()
-            for tipo, codigo, deposito, existencia in registros:
+            for codigo, deposito, existencia in registros:
                 cursor.execute("""
                     INSERT INTO sync_inventario_transito (
                         ilt_codigo_producto, 
                         ilt_codigo_deposito, 
-                        ilt_tipo_operacion,
                         ilt_existencia, 
                         ilt_cantidad_disponible, 
                         ilt_lastupdatedate
                     )
-                    VALUES (?, ?, ?, ?, ?, datetime('now'))
+                    VALUES (?, ?, ?, ?, datetime('now'))
                     ON CONFLICT(ilt_codigo_producto, ilt_codigo_deposito) DO UPDATE SET
-                        ilt_tipo_operacion = excluded.ilt_tipo_operacion,
                         ilt_existencia = excluded.ilt_existencia,
                         ilt_cantidad_disponible = excluded.ilt_existencia - COALESCE(ilt_cantidad_transito, 0),
                         ilt_lastupdatedate = datetime('now')
-                """, (codigo, deposito, tipo, existencia, existencia))
+                """, (codigo, deposito, existencia, existencia))
             conn.commit()
-    

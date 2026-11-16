@@ -5,3 +5,7 @@ logs/*.log
 config/conexiones.json
 config/remotedb.json
 config/*.db
+appsync/*.txt
+appsync/convertir_a_txt.py
+*.txt
+convertir_a_txt.py
