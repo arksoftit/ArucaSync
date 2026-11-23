@@ -1,0 +1,21 @@
+{
+    "server": "aws-0-us-east-2.pooler.supabase.com",
+    "port": 5432,
+    "database": "postgres",
+    "username": "postgres.fnxtpipsnebhhczqcnse",
+    "password": "plLT7JcmwablrYUQ",
+    "ssl": true,
+    "fecha": "18/11/2026 01:47:22",
+    "tablas": [
+        "arc_clientes",
+        "arc_depositos",
+        "arc_categorias",
+        "arc_inventario",
+        "arc_vendedores",
+        "arc_transacciones",
+        "arc_detalletranvtas",
+        "arc_inv_costos_precios",
+        "arc_existencia_actual",
+        "arc_zonas"
+    ]
+}

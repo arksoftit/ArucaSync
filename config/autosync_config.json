@@ -6,15 +6,10 @@
     ],
     "tipo_ciclo": "Definido por el usuario",
     "minutos": "5",
-    "hora_inicio": "07:00",
-    "hora_fin": "23:00",
+    "hora_inicio": "00:01",
+    "hora_fin": "23:59",
     "fecha_desde_sub": "2026-11-01",
-    "fecha_hasta_sub": "2026-11-15",
+    "fecha_hasta_sub": "2026-11-30",
     "fecha_desde_baj": "2026-11-01",
-    "fecha_hasta_baj": "2026-11-15",
-    "sincronizar_existencias": true,
-    "metodo_sinc_existencias": "periodico",
-    "frecuencia_minutos_exist": 60,
-    "monitorear_sensores_exist": false,
-    "incluir_nuevos_productos": true
+    "fecha_hasta_baj": "2026-11-30"
 }

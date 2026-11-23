@@ -1,0 +1,21 @@
+{
+    "server": "172.31.115.142",
+    "port": 5432,
+    "database": "aruca_trade_db",
+    "username": "juanep",
+    "password": "R0mp30l45",
+    "ssl": false,
+    "fecha": "18/10/2026 12:00:00",
+    "tablas": [
+        "arc_clientes",
+        "arc_depositos",
+        "arc_categorias",
+        "arc_inventario",
+        "arc_vendedores",
+        "arc_transacciones",
+        "arc_detalletranvtas",  
+        "arc_inv_costos_precios",
+        "arc_existencia_actual",
+        "arc_zonas"
+    ]
+}

@@ -1,3 +1,4 @@
+import sys
 import json
 import os
 import ssl
@@ -5,7 +6,11 @@ from datetime import datetime
 
 import pg8000.dbapi
 
-REMOTE_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config", "remotedb.json")
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+REMOTE_CONFIG_PATH = os.path.join(BASE_DIR, "config", "remotedb.json")
 
 
 class RemoteDBManager:

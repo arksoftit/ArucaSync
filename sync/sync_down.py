@@ -389,7 +389,7 @@ class SyncDown:
                         val = val.split('T')[0]
                     except Exception:
                         pass
-                val_clean = val.replace("'", "''")
+                val_clean = val.replace("'", "''").replace("\r\n", " ").replace("\r", " ").replace("\n", " ")
                 return f"'{val_clean}'"
             if hasattr(val, 'isoformat'):
                 val_str = val.isoformat().split('T')[0]

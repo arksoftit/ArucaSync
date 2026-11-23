@@ -32,6 +32,8 @@ from system_info import (
     APP_DATE,
     APP_DEVELOPER,
     get_app_version,
+    get_app_license, 
+    get_app_copyright,
     get_current_user,
     get_date_audit,
     get_machine_name,
@@ -302,6 +304,8 @@ class AppSincronizador(tk.Tk):
             f"Desarrollador: {APP_DEVELOPER}\n"
             f"Fecha: {APP_DATE}\n\n"
             f"Usuario actual: {get_current_user()}\n"
+            f"Licencia: {get_app_license()}\n"
+            f"{get_app_copyright()}\n"
             f"Equipo: {get_machine_name()}\n"
             f"Fecha de auditoría: {get_date_audit()}"
         )

@@ -2,9 +2,11 @@ import getpass
 import socket
 from datetime import datetime
 
-APP_VERSION = "0.6.01.2Beta"
+APP_VERSION = "0.6.08.04Beta"
 APP_DEVELOPER = "Juan E. Páez M. - JUEPAE"
-APP_DATE = "Septiembre 2026"
+APP_DATE = "Noviembre 2026"
+APP_LICENCIA = "MIT License"
+APP_COPYRIGHT = "Copyright (c) 2026 Arksoft Integradores de Sistemas, C.A."
 
 
 def get_date_audit():
@@ -18,10 +20,14 @@ def get_current_user():
 def get_machine_name():
     return socket.gethostname()
 
-
 def get_app_version():
     return f"ArkToolsWeb v{APP_VERSION}"
 
+def get_app_license():
+    return APP_LICENCIA
+
+def get_app_copyright():
+    return APP_COPYRIGHT
 
 def get_system_info_dict():
     return {
@@ -29,4 +35,6 @@ def get_system_info_dict():
         "usuario": get_current_user(),
         "equipo": get_machine_name(),
         "version": get_app_version(),
+        "licencia": get_app_license(),
+        "copyright": get_app_copyright(),
     }

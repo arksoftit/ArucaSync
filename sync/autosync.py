@@ -26,7 +26,7 @@ TABLAS_MONITOREO = {
     "SdetalleVenta": [9, 10, 11, 12, 13]
 }
 
-def inicializar_monitor_control(conn_dbisam, db_manager, fecha_desde, fecha_hasta, logger):
+def inicializar_monitor_control(conn_dbisam, db_manager, fecha_desde, fecha_hasta, mtimes, logger):
     conn_sqlite = db_manager._conectar()
     cursor_sqlite = conn_sqlite.cursor()
     cursor_sqlite.execute("SELECT COUNT(*) FROM sync_monitor_control WHERE mon_tablename IN ('SdetalleCompra', 'SdetalleInv', 'SdetalleVenta')")
@@ -51,17 +51,121 @@ def inicializar_monitor_control(conn_dbisam, db_manager, fecha_desde, fecha_hast
         try:
             cursor_dbisam.execute(query)
             filas = cursor_dbisam.fetchall()
+            mtime_tabla = mtimes.get(tabla, 0.0)
+            mtime_formateado = datetime.fromtimestamp(mtime_tabla).strftime("%Y-%m-%d %H:%M:%S") if mtime_tabla > 0 else ""
             for fila in filas:
                 tipo_op, total_reg, ultimo_doc, ultima_fecha = fila
                 cursor_sqlite.execute("""
-                    INSERT INTO sync_monitor_control
+                    INSERT OR REPLACE INTO sync_monitor_control
                     (mon_tablename, mon_tipo_transaccion, mon_total_registros, mon_lastupdatedate, mon_lastdocument, mon_lastdocumentdate)
                     VALUES (?, ?, ?, ?, ?, ?)
-                """, (tabla, tipo_op, total_reg, str(ultima_fecha) if ultima_fecha else "", str(ultimo_doc) if ultimo_doc else "", str(ultima_fecha) if ultima_fecha else ""))
+                """, (tabla, tipo_op, total_reg, mtime_formateado, str(ultimo_doc) if ultimo_doc else "", str(ultima_fecha) if ultima_fecha else ""))
             conn_sqlite.commit()
             logger.info(f"Monitor inicializado para {tabla}: {len(filas)} tipos de operación registrados.")
         except Exception as e:
             logger.error(f"Error inicializando monitor para {tabla}: {e}")
+    cursor_dbisam.close()
+    cursor_sqlite.close()
+    conn_sqlite.close()
+
+def verificar_cambios_monitor(manager, conn_dbisam, db_manager, fecha_desde, fecha_hasta, logger):
+    conn_sqlite = db_manager._conectar()
+    cursor_sqlite = conn_sqlite.cursor()
+    cursor_dbisam = conn_dbisam.cursor()
+
+    conexion_activa = manager.get_active_connection()
+    if not conexion_activa:
+        logger.error("No hay conexión activa para verificar monitoreo.")
+        cursor_sqlite.close()
+        conn_sqlite.close()
+        return
+
+    ruta_datos = manager.get_data_directory(conexion_activa.get("dsn", ""))
+    if not ruta_datos:
+        logger.error("No se pudo obtener la ruta de datos para verificar monitoreo.")
+        cursor_sqlite.close()
+        conn_sqlite.close()
+        return
+
+    for tabla, tipos in TABLAS_MONITOREO.items():
+        ruta_archivo = os.path.join(ruta_datos, f"{tabla}.dat")
+        if not os.path.exists(ruta_archivo):
+            continue
+
+        mtime_actual = os.path.getmtime(ruta_archivo)
+        mtime_formateado = datetime.fromtimestamp(mtime_actual).strftime("%Y-%m-%d %H:%M:%S")
+
+        cursor_sqlite.execute("""
+            SELECT mon_tipo_transaccion, mon_total_registros, mon_lastdocument, mon_lastdocumentdate, mon_lastupdatedate
+            FROM sync_monitor_control 
+            WHERE mon_tablename = ? 
+            AND mon_id_auto IN (
+                SELECT MAX(mon_id_auto) FROM sync_monitor_control WHERE mon_tablename = ? GROUP BY mon_tipo_transaccion
+            )
+        """, (tabla, tabla))
+        registros_previos = {fila[0]: fila for fila in cursor_sqlite.fetchall()}
+
+        hay_cambios_fisicos = False
+        for tipo_op in tipos:
+            if tipo_op in registros_previos:
+                prev = registros_previos[tipo_op]
+                prev_updatedate_str = prev[4]
+                if prev_updatedate_str:
+                    try:
+                        prev_dt = datetime.strptime(prev_updatedate_str, "%Y-%m-%d %H:%M:%S")
+                        if mtime_actual > prev_dt.timestamp():
+                            hay_cambios_fisicos = True
+                            break
+                    except ValueError:
+                        hay_cambios_fisicos = True
+                        break
+                else:
+                    hay_cambios_fisicos = True
+                    break
+            else:
+                hay_cambios_fisicos = True
+                break
+
+        if not hay_cambios_fisicos:
+            continue
+
+        logger.info(f"Cambios físicos detectados en {tabla}. Ejecutando consultas de conteo...")
+        tipos_str = ",".join(str(t) for t in tipos)
+        query = f"""
+            SELECT FDI_TIPOOPERACION, COUNT(*) AS TotalRegistros,
+                   MAX(FDI_DOCUMENTO) AS UltimoDocumento,
+                   MAX(FDI_FECHAOPERACION) AS UltimaFecha
+            FROM {tabla}
+            WHERE FDI_FECHAOPERACION BETWEEN '{fecha_desde}' AND '{fecha_hasta}'
+            AND FDI_TIPOOPERACION IN ({tipos_str})
+            GROUP BY FDI_TIPOOPERACION
+        """
+        try:
+            cursor_dbisam.execute(query)
+            filas = cursor_dbisam.fetchall()
+            for fila in filas:
+                tipo_op, total_reg, ultimo_doc, ultima_fecha = fila
+                prev = registros_previos.get(tipo_op)
+                
+                variacion = False
+                if not prev:
+                    variacion = True
+                elif total_reg != prev[1] or str(ultimo_doc) != str(prev[2]):
+                    variacion = True
+
+                if variacion:
+                    cursor_sqlite.execute("""
+                        INSERT OR REPLACE INTO sync_monitor_control
+                        (mon_tablename, mon_tipo_transaccion, mon_total_registros, mon_lastupdatedate, mon_lastdocument, mon_lastdocumentdate)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    """, (tabla, tipo_op, total_reg, mtime_formateado, str(ultimo_doc) if ultimo_doc else "", str(ultima_fecha) if ultima_fecha else ""))
+                    
+                    prev_info = f" (Previo: {prev[1]} regs, Doc: {prev[2]})" if prev else " (Nuevo tipo)"
+                    logger.info(f"Variación en {tabla} tipo {tipo_op}: {total_reg} registros{prev_info}")
+            conn_sqlite.commit()
+        except Exception as e:
+            logger.error(f"Error verificando cambios para {tabla}: {e}")
+
     cursor_dbisam.close()
     cursor_sqlite.close()
     conn_sqlite.close()
@@ -98,12 +202,22 @@ def main():
     f_hasta_sub = config.get("fecha_hasta_sub", "")
 
     db_manager = ArucaSyncDBManager()
+    mtimes = {} 
+    conexion_activa = manager.get_active_connection()
+    if conexion_activa:
+        ruta_datos = manager.get_data_directory(conexion_activa.get("dsn", ""))
+        if ruta_datos:
+            for tabla in TABLAS_MONITOREO.keys():
+                ruta_archivo = os.path.join(ruta_datos, f"{tabla}.dat")
+                if os.path.exists(ruta_archivo):
+                    mtimes[tabla] = os.path.getmtime(ruta_archivo)
 
     ok_init, msg_init, conn_init = manager.open_connection()
     if ok_init:
         conn_init.setdecoding(pyodbc.SQL_CHAR, encoding='latin-1')
         conn_init.setencoding(encoding='latin-1')
-        inicializar_monitor_control(conn_init, db_manager, f_desde_sub, f_hasta_sub, logger)
+        inicializar_monitor_control(conn_init, db_manager, f_desde_sub, f_hasta_sub, mtimes, logger)
+        verificar_cambios_monitor(manager, conn_init, db_manager, f_desde_sub, f_hasta_sub, logger)
 
     logger.info("Iniciando proceso de Subida...")
     for tabla_destino in tablas_sub:

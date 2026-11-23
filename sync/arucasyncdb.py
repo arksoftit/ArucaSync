@@ -1,9 +1,13 @@
 import sqlite3
 import os
+import sys
 import hashlib
 from datetime import datetime
-
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "config", "sync_control.db")
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+DB_PATH = os.path.join(BASE_DIR, "config", "sync_control.db")
 
 class ArucaSyncDBManager:
     def __init__(self, db_path=DB_PATH):
@@ -77,7 +81,7 @@ class ArucaSyncDBManager:
                 )
         """)
             conn.commit()
-            print(">>> _crear_tablas ejecutado correctamente: sync_inventario_transito verificada.")
+            # print(">>> _crear_tablas ejecutado correctamente: sync_inventario_transito verificada.")
             self._crear_superusuario_default()
 
     def _crear_superusuario_default(self):
