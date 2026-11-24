@@ -48,6 +48,32 @@ class AppSincronizador(tk.Tk):
         self.db_local = ArucaSyncDBManager()
         self.logger = None
         self.protocol("WM_DELETE_WINDOW", self._salir)
+        
+        # --- INICIO: configuracion_assets_y_logo ---
+        assets_dir = os.path.join(BASE_DIR, "assets")
+        icons_dir = os.path.join(assets_dir, "icons")
+        images_dir = os.path.join(assets_dir, "images")
+
+        icon_path = os.path.join(icons_dir, "ArucaSync_16.ico")
+        if os.path.exists(icon_path):
+            self.iconbitmap(icon_path)
+
+        logo_path = os.path.join(images_dir, "ArucaSync_Logo_120.png")
+        if os.path.exists(logo_path):
+            try:
+                from PIL import Image, ImageTk
+                img = Image.open(logo_path)
+                self.logo_img = ImageTk.PhotoImage(img)
+                
+                self.configure(bg="#CBE5FA")
+                canvas = tk.Canvas(self, width=120, height=120, highlightthickness=0, bg="#E8F4FD")
+                canvas.create_image(60, 60, image=self.logo_img)
+                canvas.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+            except ImportError:
+                pass
+        # --- FIN: configuracion_assets_y_logo ---
+        
+
 
         barra = tk.Menu(self)
         menu_conexiones = tk.Menu(barra, tearoff=0)
@@ -310,6 +336,7 @@ class AppSincronizador(tk.Tk):
             f"Fecha de auditoría: {get_date_audit()}"
         )
         messagebox.showinfo("Acerca de ArkToolsWeb", info_acerca)
+
 
     def _confirmar_salida(self):
         if messagebox.askyesno("Salir", "¿Desea cerrar la aplicación?"):
